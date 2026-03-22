@@ -1,5 +1,3 @@
-version: '3.9'
-
 volumes:
   db_data:
     driver: local
@@ -21,6 +19,7 @@ services:
       - REDIRECT_BASE_URL=${REDIRECT_BASE_URL}
       - ADMIN_BASE_URL=${ADMIN_BASE_URL}
       - PORT=3000
+      - SERVICE_FQDN_REDIRECTOR_3000=https://devknives.link
     labels:
       - "coolify.managed=true"
     healthcheck:
@@ -30,7 +29,7 @@ services:
       retries: 3
       start_period: 10s
     networks:
-      - app-network
+      - coolify
 
   admin:
     build:
@@ -51,6 +50,7 @@ services:
       - ADMIN_BASE_URL=${ADMIN_BASE_URL}
       - ADMIN_PORT=3001
       - NODE_ENV=production
+      - SERVICE_FQDN_ADMIN_3001=https://linkshort.edunavajas.com
     depends_on:
       redirector:
         condition: service_healthy
@@ -63,8 +63,8 @@ services:
       retries: 3
       start_period: 15s
     networks:
-      - app-network
+      - coolify
 
 networks:
-  app-network:
-    driver: bridge
+  coolify:
+    external: true
