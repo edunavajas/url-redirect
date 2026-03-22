@@ -19,6 +19,7 @@ export function layout(title: string, content: string): string {
     </div>
   </nav>
   <main class="container">
+    <div id="create-success"></div>
     ${content}
   </main>
 </body>

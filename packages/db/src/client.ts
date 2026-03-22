@@ -4,6 +4,8 @@ import * as schema from './schema';
 
 const DATABASE_URL = process.env.DATABASE_URL || '/data/links.db';
 
+console.log('[DB] Using database file:', DATABASE_URL)
+
 const sqlite = new Database(DATABASE_URL, { create: true });
 
 // Optimizaciones SQLite para velocidad máxima

@@ -6,8 +6,6 @@ import bcrypt from 'bcryptjs';
 const auth = new Hono();
 
 const JWT_SECRET = process.env.JWT_SECRET!;
-const ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'admin';
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD!;
 
 auth.get('/login', (c) => {
   const error = c.req.query('error');
@@ -21,6 +19,14 @@ auth.post('/login', async (c) => {
 
   if (!username || !password) {
     return c.redirect('/auth/login?error=invalid');
+  }
+
+  // Read credentials fresh from env on each login attempt
+  const ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'admin'
+  const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD
+  if (!ADMIN_PASSWORD) {
+    console.error('ADMIN_PASSWORD env var not set!')
+    return c.json({ error: 'Server misconfiguration' }, 500)
   }
 
   const validUsername = username === ADMIN_USERNAME;

@@ -15,7 +15,10 @@ app.get('/health', (c) => c.json({ status: 'ok', ts: Date.now() }));
 
 // Redirect principal
 app.get('/:slug', async (c) => {
-  const slug = c.req.param('slug');
+  const rawSlug = c.req.param('slug');
+  const slug = rawSlug.startsWith('/') ? rawSlug.slice(1) : rawSlug;
+
+  console.log(`[redirect] Raw param: "${rawSlug}" → Normalized: "${slug}"`)
 
   // 1. Buscar en caché primero
   let link = getCached(slug);
@@ -27,6 +30,9 @@ app.get('/:slug', async (c) => {
       .from(schema.links)
       .where(eq(schema.links.slug, slug))
       .limit(1);
+
+    console.log(`[redirect] Looking up slug: "${slug}"`)
+    console.log(`[redirect] Result:`, result.length ? `found → ${result[0].destination}` : 'not found')
 
     if (!result.length) {
       return c.html(`

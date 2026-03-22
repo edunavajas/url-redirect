@@ -105,15 +105,20 @@ function renderLinksTable(allLinks: any[], baseUrl: string) {
             </td>
             <td class="date">${formatDate(link.createdAt)}</td>
             <td>
-              <button class="btn btn-icon btn-danger"
-                hx-delete="/api/links/${link.id}"
-                hx-target="#link-row-${link.id}"
-                hx-swap="outerHTML"
-                hx-confirm="¿Eliminar este link? Esta acción no se puede deshacer.">
-                🗑️
-              </button>
-              <a href="/stats/${link.id}" class="btn btn-icon">📊</a>
-            </td>
+               <button
+                 class="btn btn-icon"
+                 onclick="navigator.clipboard.writeText('${baseUrl}/${link.slug}').then(()=>this.textContent='✅').catch(()=>this.textContent='❌'); setTimeout(()=>this.textContent='📋',2000)"
+                 title="Copiar link completo"
+               >📋</button>
+               <button class="btn btn-icon btn-danger"
+                 hx-delete="/api/links/${link.id}"
+                 hx-target="#link-row-${link.id}"
+                 hx-swap="outerHTML"
+                 hx-confirm="¿Eliminar este link? Esta acción no se puede deshacer.">
+                 🗑️
+               </button>
+               <a href="/stats/${link.id}" class="btn btn-icon">📊</a>
+             </td>
           </tr>
         `).join('')}
       </tbody>
@@ -167,7 +172,17 @@ links.post('/', async (c) => {
     .orderBy(desc(schema.links.createdAt));
 
   const baseUrl = process.env.REDIRECT_BASE_URL || 'http://localhost:3000';
-  return c.html(renderLinksTable(allLinks, baseUrl));
+
+  // Add success banner with copy button (HTMX OOB swap)
+  const fullUrl = `${baseUrl}/${slug}`;
+  const successBanner = `
+    <div id="create-success" class="success-banner" hx-swap-oob="true">
+      <span>✅ Link creado: <a href="${fullUrl}" target="_blank">${fullUrl}</a></span>
+      <button class="btn btn-sm" onclick="navigator.clipboard.writeText('${fullUrl}').then(()=>{this.textContent='✅ Copiado!';setTimeout(()=>this.textContent='📋 Copiar',2000)})">📋 Copiar</button>
+    </div>
+  `;
+
+  return c.html(successBanner + renderLinksTable(allLinks, baseUrl));
 });
 
 // API: toggle activo/inactivo
@@ -210,11 +225,16 @@ function renderLinkRow(link: any, baseUrl: string) {
       <span class="slider"></span></label></td>
     <td class="date">${formatDate(link.createdAt)}</td>
     <td>
-      <button class="btn btn-icon btn-danger" hx-delete="/api/links/${link.id}"
-        hx-target="#link-row-${link.id}" hx-swap="outerHTML"
-        hx-confirm="¿Eliminar este link?">🗑️</button>
-      <a href="/stats/${link.id}" class="btn btn-icon">📊</a>
-    </td>
+       <button
+         class="btn btn-icon"
+         onclick="navigator.clipboard.writeText('${baseUrl}/${link.slug}').then(()=>this.textContent='✅').catch(()=>this.textContent='❌'); setTimeout(()=>this.textContent='📋',2000)"
+         title="Copiar link completo"
+       >📋</button>
+       <button class="btn btn-icon btn-danger" hx-delete="/api/links/${link.id}"
+         hx-target="#link-row-${link.id}" hx-swap="outerHTML"
+         hx-confirm="¿Eliminar este link?">🗑️</button>
+       <a href="/stats/${link.id}" class="btn btn-icon">📊</a>
+     </td>
   </tr>`;
 }
 
