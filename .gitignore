@@ -1,0 +1,9 @@
+node_modules/
+.env
+*.db
+*.db-shm
+*.db-wal
+db/data/*.db
+dist/
+.DS_Store
+bun.lockb

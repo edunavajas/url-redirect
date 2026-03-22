@@ -1,0 +1,7 @@
+{
+  "version": "6",
+  "dialect": "sqlite",
+  "tables": {},
+  "enums": {},
+  "_meta": { "schemas": {}, "tables": {}, "columns": {} }
+}

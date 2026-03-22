@@ -1,0 +1,70 @@
+version: '3.9'
+
+volumes:
+  db_data:
+    driver: local
+
+services:
+  redirector:
+    build:
+      context: .
+      dockerfile: apps/redirector/Dockerfile
+    container_name: url-redirector
+    restart: unless-stopped
+    expose:
+      - "3000"
+    volumes:
+      - db_data:/data
+    environment:
+      - DATABASE_URL=/data/links.db
+      - IP_SALT=${IP_SALT}
+      - REDIRECT_BASE_URL=${REDIRECT_BASE_URL}
+      - ADMIN_BASE_URL=${ADMIN_BASE_URL}
+      - PORT=3000
+    labels:
+      - "coolify.managed=true"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - app-network
+
+  admin:
+    build:
+      context: .
+      dockerfile: apps/admin/Dockerfile
+    container_name: url-admin
+    restart: unless-stopped
+    expose:
+      - "3001"
+    volumes:
+      - db_data:/data
+    environment:
+      - DATABASE_URL=/data/links.db
+      - JWT_SECRET=${JWT_SECRET}
+      - ADMIN_USERNAME=${ADMIN_USERNAME}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+      - REDIRECT_BASE_URL=${REDIRECT_BASE_URL}
+      - ADMIN_BASE_URL=${ADMIN_BASE_URL}
+      - ADMIN_PORT=3001
+      - NODE_ENV=production
+    depends_on:
+      redirector:
+        condition: service_healthy
+    labels:
+      - "coolify.managed=true"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3001/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge

@@ -1,0 +1,5 @@
+{
+  "name": "url-redirect-monorepo",
+  "private": true,
+  "workspaces": ["apps/*", "packages/*"]
+}

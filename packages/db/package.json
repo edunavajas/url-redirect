@@ -1,0 +1,11 @@
+{
+  "name": "@url-redirect/db",
+  "version": "1.0.0",
+  "main": "./src/index.ts",
+  "dependencies": {
+    "drizzle-orm": "^0.38.0"
+  },
+  "devDependencies": {
+    "drizzle-kit": "^0.30.0"
+  }
+}

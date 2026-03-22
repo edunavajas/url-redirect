@@ -1,0 +1,16 @@
+{
+  "name": "@url-redirect/admin",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "bun run --watch src/index.ts",
+    "start": "bun run src/index.ts"
+  },
+  "dependencies": {
+    "@url-redirect/db": "workspace:*",
+    "hono": "^4.6.0",
+    "bcryptjs": "^2.4.3"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.0"
+  }
+}
