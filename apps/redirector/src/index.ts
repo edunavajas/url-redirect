@@ -8,7 +8,7 @@ import crypto from 'crypto';
 const app = new Hono();
 
 // Ejecutar migraciones al iniciar
-runMigrations();
+await runMigrations();
 
 // Health check
 app.get('/health', (c) => c.json({ status: 'ok', ts: Date.now() }));

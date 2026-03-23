@@ -3,9 +3,11 @@
   "version": "1.0.0",
   "main": "./src/index.ts",
   "dependencies": {
-    "drizzle-orm": "^0.38.0"
+    "drizzle-orm": "^0.38.0",
+    "pg": "^8.11.3"
   },
   "devDependencies": {
-    "drizzle-kit": "^0.30.0"
+    "drizzle-kit": "^0.30.0",
+    "@types/pg": "^8.11.0"
   }
 }

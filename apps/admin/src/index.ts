@@ -8,7 +8,7 @@ import statsRoutes from './routes/stats';
 
 const app = new Hono();
 
-runMigrations();
+await runMigrations();
 
 const JWT_SECRET = process.env.JWT_SECRET!;
 

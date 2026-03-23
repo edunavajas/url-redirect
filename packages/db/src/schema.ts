@@ -1,20 +1,20 @@
-import { sqliteTable, text, integer, real } from 'drizzle-orm/sqlite-core';
+import { pgTable, text, integer, bigserial, bigint, boolean } from 'drizzle-orm/pg-core';
 
-export const links = sqliteTable('links', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
+export const links = pgTable('links', {
+  id: bigserial('id', { mode: 'number' }).primaryKey(),
   slug: text('slug').notNull().unique(),
   destination: text('destination').notNull(),
   title: text('title'),
-  isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
+  isActive: boolean('is_active').notNull().default(true),
   maxClicks: integer('max_clicks'),
-  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
-  expiresAt: integer('expires_at', { mode: 'timestamp' }),
+  createdAt: bigint('created_at', { mode: 'number' }).notNull().$defaultFn(() => Date.now()),
+  expiresAt: bigint('expires_at', { mode: 'number' }),
 });
 
-export const visits = sqliteTable('visits', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
-  linkId: integer('link_id').notNull().references(() => links.id, { onDelete: 'cascade' }),
-  clickedAt: integer('clicked_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
+export const visits = pgTable('visits', {
+  id: bigserial('id', { mode: 'number' }).primaryKey(),
+  linkId: bigint('link_id', { mode: 'number' }).notNull().references(() => links.id, { onDelete: 'cascade' }),
+  clickedAt: bigint('clicked_at', { mode: 'number' }).notNull().$defaultFn(() => Date.now()),
   ipHash: text('ip_hash'),
   userAgent: text('user_agent'),
   referer: text('referer'),

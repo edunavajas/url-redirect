@@ -1,50 +1,58 @@
-import { Database } from 'bun:sqlite';
-import { drizzle } from 'drizzle-orm/bun-sqlite';
+import { drizzle } from 'drizzle-orm/node-postgres';
+import { Pool } from 'pg';
 import * as schema from './schema';
 
-const DATABASE_URL = process.env.DATABASE_URL || '/data/links.db';
+const DATABASE_URL = process.env.DATABASE_URL;
 
-console.log('[DB] Using database file:', DATABASE_URL)
+if (!DATABASE_URL) {
+  throw new Error('DATABASE_URL environment variable is required');
+}
 
-const sqlite = new Database(DATABASE_URL, { create: true });
+console.log('[DB] Using PostgreSQL database');
 
-// Optimizaciones SQLite para velocidad máxima
-sqlite.exec('PRAGMA journal_mode = WAL;');
-sqlite.exec('PRAGMA synchronous = NORMAL;');
-sqlite.exec('PRAGMA cache_size = -64000;');  // 64MB cache
-sqlite.exec('PRAGMA foreign_keys = ON;');
-sqlite.exec('PRAGMA temp_store = MEMORY;');
+const pool = new Pool({
+  connectionString: DATABASE_URL,
+});
 
-export const db = drizzle(sqlite, { schema });
+export const db = drizzle(pool, { schema });
 
 // Migración embebida — no depende de rutas de filesystem
-export function runMigrations() {
-  sqlite.exec(`
-    CREATE TABLE IF NOT EXISTS links (
-      id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-      slug TEXT NOT NULL UNIQUE,
-      destination TEXT NOT NULL,
-      title TEXT,
-      is_active INTEGER NOT NULL DEFAULT 1,
-      max_clicks INTEGER,
-      created_at INTEGER NOT NULL DEFAULT (unixepoch() * 1000),
-      expires_at INTEGER
-    );
+export async function runMigrations() {
+  const client = await pool.connect();
+  try {
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS links (
+        id SERIAL PRIMARY KEY,
+        slug TEXT NOT NULL UNIQUE,
+        destination TEXT NOT NULL,
+        title TEXT,
+        is_active BOOLEAN NOT NULL DEFAULT true,
+        max_clicks INTEGER,
+        created_at BIGINT NOT NULL DEFAULT (extract(epoch from now()) * 1000)::bigint,
+        expires_at BIGINT
+      );
 
-    CREATE TABLE IF NOT EXISTS visits (
-      id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-      link_id INTEGER NOT NULL REFERENCES links(id) ON DELETE CASCADE,
-      clicked_at INTEGER NOT NULL DEFAULT (unixepoch() * 1000),
-      ip_hash TEXT,
-      user_agent TEXT,
-      referer TEXT,
-      country TEXT
-    );
+      CREATE TABLE IF NOT EXISTS visits (
+        id SERIAL PRIMARY KEY,
+        link_id INTEGER NOT NULL REFERENCES links(id) ON DELETE CASCADE,
+        clicked_at BIGINT NOT NULL DEFAULT (extract(epoch from now()) * 1000)::bigint,
+        ip_hash TEXT,
+        user_agent TEXT,
+        referer TEXT,
+        country TEXT
+      );
 
-    CREATE INDEX IF NOT EXISTS slug_idx ON links(slug);
-    CREATE INDEX IF NOT EXISTS visits_link_id_idx ON visits(link_id);
-    CREATE INDEX IF NOT EXISTS visits_clicked_at_idx ON visits(clicked_at);
-  `);
+      CREATE INDEX IF NOT EXISTS slug_idx ON links(slug);
+      CREATE INDEX IF NOT EXISTS visits_link_id_idx ON visits(link_id);
+      CREATE INDEX IF NOT EXISTS visits_clicked_at_idx ON visits(clicked_at);
+    `);
+    console.log('[DB] Migrations completed successfully');
+  } catch (error) {
+    console.error('[DB] Migration failed:', error);
+    throw error;
+  } finally {
+    client.release();
+  }
 }
 
 export { schema };

@@ -3,7 +3,7 @@ import 'dotenv/config';
 import { db, schema } from '../packages/db/src/index';
 import { runMigrations } from '../packages/db/src/client';
 
-runMigrations();
+await runMigrations();
 
 await db.insert(schema.links).values({
   slug: 'test',
