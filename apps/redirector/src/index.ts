@@ -78,15 +78,15 @@ app.get('/:slug', async (c) => {
     userAgent,
     referer,
     country,
-  }).run().catch(() => {});
+  }).execute().catch(() => {});
 
   // 6. Verificar max_clicks (si está configurado)
   if (link.maxClicks) {
-    const countResult = db
+    const countResult = await db
       .select({ count: schema.visits.id })
       .from(schema.visits)
       .where(eq(schema.visits.linkId, link.id))
-      .all();
+      .execute();
     // Si superó el límite, desactivar
     // (simplificado, en producción usar COUNT(*))
   }
