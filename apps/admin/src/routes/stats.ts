@@ -19,7 +19,7 @@ stats.get('/:linkId', async (c) => {
   // Visitas por día (últimos 30 días)
   const visitsByDay = await db
     .select({
-      day: sql<string>`date(datetime(${schema.visits.clickedAt} / 1000, 'unixepoch'))`.as('day'),
+      day: sql<string>`to_char(to_timestamp(${schema.visits.clickedAt} / 1000.0), 'YYYY-MM-DD')`.as('day'),
       count: count(),
     })
     .from(schema.visits)
