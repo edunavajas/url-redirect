@@ -48,8 +48,21 @@ stats.get('/:linkId', async (c) => {
 
   const content = `
     <div class="page-header">
-      <a href="/links" class="btn btn-secondary">← Volver</a>
-      <h2>📊 Estadísticas: /${link[0].slug}</h2>
+      <a href="/links" class="btn btn-secondary">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="19" y1="12" x2="5" y2="12"></line>
+          <polyline points="12 19 5 12 12 5"></polyline>
+        </svg>
+        Volver
+      </a>
+      <h2>
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--indigo-400)">
+          <line x1="18" y1="20" x2="18" y2="10"></line>
+          <line x1="12" y1="20" x2="12" y2="4"></line>
+          <line x1="6" y1="20" x2="6" y2="14"></line>
+        </svg>
+        Estadísticas: /${link[0].slug}
+      </h2>
     </div>
 
     <div class="stats-grid">
@@ -68,15 +81,33 @@ stats.get('/:linkId', async (c) => {
     </div>
 
     <div class="detail-card">
-      <h3>Destino</h3>
-      <a href="${link[0].destination}" target="_blank">${link[0].destination}</a>
-      <br><br>
-      <strong>URL corta:</strong> <a href="${baseUrl}/${link[0].slug}" target="_blank">${baseUrl}/${link[0].slug}</a>
+      <h3>
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+          <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+        </svg>
+        Información del link
+      </h3>
+      <div style="margin-bottom: 0.75rem;">
+        <span style="color: var(--slate-500); font-size: 0.8125rem;">Destino:</span><br>
+        <a href="${link[0].destination}" target="_blank">${link[0].destination}</a>
+      </div>
+      <div>
+        <span style="color: var(--slate-500); font-size: 0.8125rem;">URL corta:</span><br>
+        <a href="${baseUrl}/${link[0].slug}" target="_blank" class="slug-link">${baseUrl}/${link[0].slug}</a>
+      </div>
     </div>
 
     ${visitsByDay.length > 0 ? `
     <div class="detail-card">
-      <h3>Clics por día</h3>
+      <h3>
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+          <line x1="3" y1="9" x2="21" y2="9"></line>
+          <line x1="9" y1="21" x2="9" y2="9"></line>
+        </svg>
+        Clics por día
+      </h3>
       <div class="chart">
         ${renderBarChart(visitsByDay)}
       </div>
@@ -84,7 +115,14 @@ stats.get('/:linkId', async (c) => {
 
     ${topCountries.length > 0 ? `
     <div class="detail-card">
-      <h3>Top países</h3>
+      <h3>
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="2" y1="12" x2="22" y2="12"></line>
+          <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+        </svg>
+        Top países
+      </h3>
       <table class="table">
         <thead><tr><th>País</th><th>Visitas</th></tr></thead>
         <tbody>
@@ -94,7 +132,16 @@ stats.get('/:linkId', async (c) => {
     </div>` : ''}
 
     <div class="detail-card">
-      <h3>Últimas visitas</h3>
+      <h3>
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+          <polyline points="14 2 14 8 20 8"></polyline>
+          <line x1="16" y1="13" x2="8" y2="13"></line>
+          <line x1="16" y1="17" x2="8" y2="17"></line>
+          <polyline points="10 9 9 9 8 9"></polyline>
+        </svg>
+        Últimas visitas
+      </h3>
       <table class="table">
         <thead><tr><th>Fecha</th><th>País</th><th>Referrer</th></tr></thead>
         <tbody>

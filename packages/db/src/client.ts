@@ -45,6 +45,18 @@ export async function runMigrations() {
       CREATE INDEX IF NOT EXISTS slug_idx ON links(slug);
       CREATE INDEX IF NOT EXISTS visits_link_id_idx ON visits(link_id);
       CREATE INDEX IF NOT EXISTS visits_clicked_at_idx ON visits(clicked_at);
+
+      CREATE TABLE IF NOT EXISTS link_history (
+        id SERIAL PRIMARY KEY,
+        link_id INTEGER NOT NULL REFERENCES links(id) ON DELETE CASCADE,
+        field_name TEXT NOT NULL,
+        old_value TEXT,
+        new_value TEXT,
+        edited_at BIGINT NOT NULL DEFAULT (extract(epoch from now()) * 1000)::bigint
+      );
+
+      CREATE INDEX IF NOT EXISTS link_history_link_id_idx ON link_history(link_id);
+      CREATE INDEX IF NOT EXISTS link_history_edited_at_idx ON link_history(edited_at);
     `);
     console.log('[DB] Migrations completed successfully');
   } catch (error) {

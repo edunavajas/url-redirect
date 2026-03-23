@@ -21,7 +21,18 @@ export const visits = pgTable('visits', {
   country: text('country'),
 });
 
+export const linkHistory = pgTable('link_history', {
+  id: bigserial('id', { mode: 'number' }).primaryKey(),
+  linkId: bigint('link_id', { mode: 'number' }).notNull().references(() => links.id, { onDelete: 'cascade' }),
+  fieldName: text('field_name').notNull(),
+  oldValue: text('old_value'),
+  newValue: text('new_value'),
+  editedAt: bigint('edited_at', { mode: 'number' }).notNull().$defaultFn(() => Date.now()),
+});
+
 export type Link = typeof links.$inferSelect;
 export type NewLink = typeof links.$inferInsert;
 export type Visit = typeof visits.$inferSelect;
 export type NewVisit = typeof visits.$inferInsert;
+export type LinkHistory = typeof linkHistory.$inferSelect;
+export type NewLinkHistory = typeof linkHistory.$inferInsert;
