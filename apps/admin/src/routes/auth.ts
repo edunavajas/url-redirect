@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { setCookie, deleteCookie } from 'hono/cookie';
 import { sign } from 'hono/jwt';
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 
 const auth = new Hono();
 
@@ -30,12 +31,22 @@ auth.post('/login', async (c) => {
   }
 
   const validUsername = username === ADMIN_USERNAME;
-  // Comparación segura con bcrypt (ADMIN_PASSWORD puede ser hash o texto plano en dev)
+  // Comparación segura
   let validPassword = false;
   if (ADMIN_PASSWORD.startsWith('$2')) {
-    validPassword = await bcrypt.compare(password, ADMIN_PASSWORD);
+    // bcrypt hash
+    try {
+      validPassword = await bcrypt.compare(password, ADMIN_PASSWORD);
+    } catch (e) {
+      console.error('bcrypt error:', e);
+      validPassword = false;
+    }
+  } else if (ADMIN_PASSWORD.length === 64) {
+    // SHA256 hash (temporal)
+    const hash = crypto.createHash('sha256').update(password).digest('hex');
+    validPassword = hash === ADMIN_PASSWORD;
   } else {
-    // Dev mode: comparación directa (avisar en producción)
+    // Texto plano (solo para dev)
     validPassword = password === ADMIN_PASSWORD;
   }
 
