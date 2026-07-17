@@ -2,8 +2,12 @@ import { Hono } from 'hono';
 import { db, schema } from '@url-redirect/db';
 import { runMigrations } from '@url-redirect/db';
 import { getCached, setCache } from './cache';
+import { decideBioAction, buildBioCacheEntry, decideStaleFallback, type BioCacheEntry } from './bio/bioCache';
 import { eq } from 'drizzle-orm';
 import crypto from 'crypto';
+
+let bioCache: BioCacheEntry | null = null;
+const BIO_CACHE_TTL_MS = 30_000;
 
 const app = new Hono();
 
@@ -95,10 +99,32 @@ app.get('/:slug', async (c) => {
   return c.redirect(link.destination, 301);
 });
 
-// Root redirect
-app.get('/', (c) => {
+// Root → bio page (o fallback al admin si no está configurada)
+app.get('/', async (c) => {
   const baseUrl = process.env.ADMIN_BASE_URL || 'https://admin.example.com';
-  return c.redirect(baseUrl, 302);
+  const redirect = () => c.redirect(baseUrl, 302);
+  const now = Date.now();
+
+  // Cache válido → cero queries
+  const action = decideBioAction(bioCache, now, BIO_CACHE_TTL_MS);
+  if (action.kind === 'serve') return c.html(action.html);
+  if (action.kind === 'redirect') return redirect();
+
+  // Cache expirado → una sola tanda de queries
+  try {
+    const [profileRows, blocks] = await Promise.all([
+      db.select().from(schema.bioProfile).where(eq(schema.bioProfile.id, 1)).limit(1),
+      db.select().from(schema.bioBlocks),
+    ]);
+    bioCache = buildBioCacheEntry(profileRows[0] ?? null, blocks, now);
+    const fresh = decideBioAction(bioCache, now, BIO_CACHE_TTL_MS);
+    return fresh.kind === 'serve' ? c.html(fresh.html) : redirect();
+  } catch (e) {
+    console.error('[bio] error cargando bio page:', e);
+    // BD caída → sirve el cache viejo si existe (la bio sigue viva)
+    const fallback = decideStaleFallback(bioCache);
+    return fallback.kind === 'serve' ? c.html(fallback.html) : redirect();
+  }
 });
 
 const port = parseInt(process.env.PORT || '3000');

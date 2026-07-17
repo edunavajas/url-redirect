@@ -7,3 +7,6 @@ db/data/*.db
 dist/
 .DS_Store
 bun.lockb
+.playwright-mcp/
+bio-*.png
+admin-bio.png

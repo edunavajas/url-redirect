@@ -57,6 +57,37 @@ export async function runMigrations() {
 
       CREATE INDEX IF NOT EXISTS link_history_link_id_idx ON link_history(link_id);
       CREATE INDEX IF NOT EXISTS link_history_edited_at_idx ON link_history(edited_at);
+
+      CREATE TABLE IF NOT EXISTS bio_profile (
+        id INTEGER PRIMARY KEY CHECK (id = 1),
+        display_name TEXT NOT NULL DEFAULT '',
+        tagline TEXT NOT NULL DEFAULT '',
+        avatar_url TEXT NOT NULL DEFAULT '',
+        accent_color TEXT NOT NULL DEFAULT '#0a84ff',
+        seo_title TEXT NOT NULL DEFAULT '',
+        seo_description TEXT NOT NULL DEFAULT '',
+        created_at BIGINT NOT NULL DEFAULT (extract(epoch from now()) * 1000)::bigint,
+        updated_at BIGINT NOT NULL DEFAULT (extract(epoch from now()) * 1000)::bigint
+      );
+
+      CREATE TABLE IF NOT EXISTS bio_blocks (
+        id BIGSERIAL PRIMARY KEY,
+        type TEXT NOT NULL CHECK (type IN ('social','link','video','promo')),
+        title TEXT NOT NULL DEFAULT '',
+        url TEXT NOT NULL DEFAULT '',
+        thumbnail_url TEXT NOT NULL DEFAULT '',
+        subtitle TEXT NOT NULL DEFAULT '',
+        position INTEGER NOT NULL DEFAULT 0,
+        is_active BOOLEAN NOT NULL DEFAULT true,
+        created_at BIGINT NOT NULL DEFAULT (extract(epoch from now()) * 1000)::bigint,
+        updated_at BIGINT NOT NULL DEFAULT (extract(epoch from now()) * 1000)::bigint
+      );
+
+      CREATE INDEX IF NOT EXISTS bio_blocks_position_idx ON bio_blocks(position);
+
+      INSERT INTO bio_profile (id, created_at, updated_at)
+      VALUES (1, (extract(epoch from now()) * 1000)::bigint, (extract(epoch from now()) * 1000)::bigint)
+      ON CONFLICT (id) DO NOTHING;
     `);
     console.log('[DB] Migrations completed successfully');
   } catch (error) {
