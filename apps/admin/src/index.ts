@@ -30,7 +30,8 @@ const jwtMiddleware = jwt({ secret: JWT_SECRET, cookie: 'admin_token', alg: 'HS2
 app.use('/api/*', jwtMiddleware);
 app.use('/links/*', jwtMiddleware);
 app.use('/stats/*', jwtMiddleware);
-app.use('/bio*', jwtMiddleware);
+app.use('/bio', jwtMiddleware);
+app.use('/bio/*', jwtMiddleware);
 app.use('/dashboard*', jwtMiddleware);
 
 app.route('/api/links', linksRoutes);
