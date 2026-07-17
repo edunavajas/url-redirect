@@ -72,7 +72,7 @@ export async function runMigrations() {
 
       CREATE TABLE IF NOT EXISTS bio_blocks (
         id BIGSERIAL PRIMARY KEY,
-        type TEXT NOT NULL CHECK (type IN ('social','link','video','promo')),
+        type TEXT NOT NULL CHECK (type IN ('social','link','video','promo','section')),
         title TEXT NOT NULL DEFAULT '',
         url TEXT NOT NULL DEFAULT '',
         thumbnail_url TEXT NOT NULL DEFAULT '',
@@ -82,6 +82,9 @@ export async function runMigrations() {
         created_at BIGINT NOT NULL DEFAULT (extract(epoch from now()) * 1000)::bigint,
         updated_at BIGINT NOT NULL DEFAULT (extract(epoch from now()) * 1000)::bigint
       );
+
+      ALTER TABLE bio_blocks DROP CONSTRAINT IF EXISTS bio_blocks_type_check;
+      ALTER TABLE bio_blocks ADD CONSTRAINT bio_blocks_type_check CHECK (type IN ('social','link','video','promo','section'));
 
       CREATE INDEX IF NOT EXISTS bio_blocks_position_idx ON bio_blocks(position);
 

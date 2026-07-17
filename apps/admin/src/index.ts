@@ -1086,6 +1086,7 @@ body {
 .type-link { color: var(--indigo-400); background: rgba(99, 102, 241, 0.1); }
 .type-video { color: var(--rose-400); background: rgba(244, 63, 94, 0.1); }
 .type-promo { color: var(--amber-400); background: rgba(245, 158, 11, 0.1); }
+.type-section { color: var(--slate-300); background: rgba(148, 163, 184, 0.12); }
 
 .bio-block-info {
   flex: 1;

@@ -1,5 +1,5 @@
 import type { BioProfile, BioBlock } from '@url-redirect/db';
-import { socialIconFor, socialNameFor } from './icons';
+import { socialIconFor, socialNameFor, MAIL_ICON } from './icons';
 
 export function escapeHtml(s: string): string {
   return s
@@ -27,6 +27,11 @@ export function isBioConfigured(profile: BioProfile | null, blocks: BioBlock[]):
   const hasName = !!profile?.displayName?.trim();
   const hasBlocks = blocks.some(b => b.isActive);
   return hasName || hasBlocks;
+}
+
+export function mailtoEmail(url: string): string | null {
+  const m = /^mailto:([^@\s]+@[^@\s]+\.[^@\s]+)$/i.exec((url || '').trim());
+  return m ? m[1] : null;
 }
 
 export function sortBlocks(blocks: BioBlock[]): BioBlock[] {
@@ -91,6 +96,21 @@ h1{font-size:22px;font-weight:600;letter-spacing:-0.02em}
 .social-btn:hover{transform:translateY(-2px);border-color:rgba(255,255,255,0.22);color:#fff}
 .social-btn:active{transform:scale(0.965);transition-duration:120ms}
 .blocks{display:flex;flex-direction:column;gap:14px}
+.section-title{
+  font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.09em;
+  color:rgba(255,255,255,0.42);text-align:center;margin:18px 0 2px;
+}
+#toast{
+  position:fixed;bottom:24px;left:50%;transform:translate(-50%,8px);
+  display:flex;align-items:center;gap:8px;z-index:10;pointer-events:none;
+  background:rgba(255,255,255,0.09);
+  backdrop-filter:blur(24px) saturate(150%);-webkit-backdrop-filter:blur(24px) saturate(150%);
+  border:1px solid rgba(255,255,255,0.12);border-radius:999px;
+  padding:10px 18px;font-size:14px;color:#fff;
+  opacity:0;transition:opacity 250ms,transform 250ms;
+}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+#toast svg{width:16px;height:16px;flex-shrink:0}
 .card{
   display:block;text-decoration:none;color:inherit;overflow:hidden;position:relative;
   background:rgba(255,255,255,0.055);
@@ -143,6 +163,7 @@ footer{
 @media (prefers-reduced-motion: reduce){
   .enter{animation:none}
   .card,.social-btn,.play{transition:none}
+  #toast{transition:none}
 }
 `;
 }
@@ -161,7 +182,9 @@ function renderSocial(block: BioBlock): string {
   const url = safeUrl(block.url);
   if (!url) return '';
   const label = escapeHtml(block.title || socialNameFor(block.url));
-  return `<a class="social-btn enter" ${anim()} href="${url}" target="_blank" rel="noopener noreferrer" aria-label="${label}" title="${label}">${socialIconFor(block.url)}</a>`;
+  const email = mailtoEmail(block.url);
+  const copy = email ? ` data-copy="${escapeHtml(email)}"` : '';
+  return `<a class="social-btn enter" ${anim()} href="${url}"${copy} target="_blank" rel="noopener noreferrer" aria-label="${label}" title="${label}">${socialIconFor(block.url)}</a>`;
 }
 
 const PLAY_SVG = '<svg viewBox="0 0 24 24"><path d="M8 5.14v14l11-7-11-7z"/></svg>';
@@ -198,17 +221,26 @@ function renderLink(block: BioBlock): string {
   const url = safeUrl(block.url);
   if (!url) return '';
   const thumb = safeUrl(block.thumbnailUrl);
+  const email = mailtoEmail(block.url);
+  const copy = email ? ` data-copy="${escapeHtml(email)}"` : '';
   const title = escapeHtml(block.title || block.url.replace(/^https?:\/\//, '').replace(/\/$/, ''));
-  return `<a class="card card-link enter" ${anim()} href="${url}" target="_blank" rel="noopener noreferrer">
+  const subtitle = block.subtitle || email || '';
+  return `<a class="card card-link enter" ${anim()} href="${url}"${copy} target="_blank" rel="noopener noreferrer">
     ${thumb
       ? `<img class="link-thumb" src="${thumb}" alt="" loading="lazy" referrerpolicy="no-referrer">`
-      : `<span class="link-thumb-fallback">${LINK_ICON}</span>`}
+      : `<span class="link-thumb-fallback">${email ? MAIL_ICON : LINK_ICON}</span>`}
     <span class="link-text">
       <span class="card-title">${title}</span>
-      ${block.subtitle ? `<span class="card-sub">${escapeHtml(block.subtitle)}</span>` : ''}
+      ${subtitle ? `<span class="card-sub">${escapeHtml(subtitle)}</span>` : ''}
     </span>
     <span class="chevron">${CHEVRON_SVG}</span>
   </a>`;
+}
+
+function renderSection(block: BioBlock): string {
+  const title = (block.title || '').trim();
+  if (!title) return '';
+  return `<h2 class="section-title enter" ${anim()}>${escapeHtml(title)}</h2>`;
 }
 
 export function renderBioPage(profile: BioProfile | null, blocks: BioBlock[]): string {
@@ -233,6 +265,7 @@ export function renderBioPage(profile: BioProfile | null, blocks: BioBlock[]): s
   const blocksHtml = rest.map(b => {
     if (b.type === 'video') return renderVideo(b);
     if (b.type === 'promo') return renderPromo(b);
+    if (b.type === 'section') return renderSection(b);
     return renderLink(b);
   }).join('');
 
@@ -267,6 +300,30 @@ ${avatar ? `<meta property="og:image" content="${avatar}">` : ''}
   <div class="blocks">${blocksHtml}</div>
   <footer class="enter" ${anim()}>devknives.link</footer>
 </main>
+<div id="toast" role="status" aria-live="polite"><svg viewBox="0 0 24 24" fill="none" stroke="#34c759" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg><span id="toast-msg"></span></div>
+<script>
+(function(){
+  var toast = document.getElementById('toast');
+  var toastMsg = document.getElementById('toast-msg');
+  var timer = null;
+  function showToast(msg) {
+    if (!toast || !toastMsg) return;
+    toastMsg.textContent = msg;
+    toast.classList.add('show');
+    if (timer) clearTimeout(timer);
+    timer = setTimeout(function(){ toast.classList.remove('show'); }, 1800);
+  }
+  document.addEventListener('click', function(e) {
+    var a = e.target && e.target.closest ? e.target.closest('[data-copy]') : null;
+    if (!a || !navigator.clipboard) return;
+    e.preventDefault();
+    navigator.clipboard.writeText(a.getAttribute('data-copy')).then(
+      function(){ showToast('Email copiado'); },
+      function(){ window.location.href = a.href; }
+    );
+  });
+})();
+</script>
 </body>
 </html>`;
 }

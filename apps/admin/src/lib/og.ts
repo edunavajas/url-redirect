@@ -83,6 +83,71 @@ export function isHttpUrl(url: string): boolean {
   }
 }
 
+export function buildOEmbedUrl(videoId: string): string {
+  const canonical = `https://www.youtube.com/watch?v=${videoId}`;
+  return `https://www.youtube.com/oembed?url=${encodeURIComponent(canonical)}&format=json`;
+}
+
+export function parseOEmbed(json: unknown): { title: string; description: string } {
+  if (!json || typeof json !== 'object') {
+    throw new Error('Respuesta oEmbed inválida');
+  }
+  const o = json as Record<string, unknown>;
+  const title = typeof o.title === 'string' ? o.title : '';
+  const author = typeof o.author_name === 'string' ? o.author_name : '';
+  if (!title) {
+    throw new Error('Respuesta oEmbed sin título');
+  }
+  return { title, description: author };
+}
+
+export function pickThumbnail(videoId: string, maxresOk: boolean): string {
+  const file = maxresOk ? 'maxresdefault.jpg' : 'hqdefault.jpg';
+  return `https://i.ytimg.com/vi/${videoId}/${file}`;
+}
+
+const HEAD_TIMEOUT_MS = 3000;
+
+async function headOk(url: string): Promise<boolean> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), HEAD_TIMEOUT_MS);
+  try {
+    const res = await fetch(url, { method: 'HEAD', signal: controller.signal, redirect: 'follow' });
+    return res.status === 200;
+  } catch {
+    return false;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+export async function fetchYouTubeOg(videoId: string): Promise<OgData> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+  let parsed: { title: string; description: string };
+  try {
+    const res = await fetch(buildOEmbedUrl(videoId), {
+      signal: controller.signal,
+      redirect: 'follow',
+      headers: { Accept: 'application/json' },
+    });
+    if (!res.ok) {
+      throw new Error(`YouTube oEmbed respondió ${res.status}`);
+    }
+    let json: unknown;
+    try {
+      json = await res.json();
+    } catch {
+      throw new Error('Respuesta oEmbed inválida');
+    }
+    parsed = parseOEmbed(json);
+  } finally {
+    clearTimeout(timer);
+  }
+  const maxresOk = await headOk(pickThumbnail(videoId, true));
+  return { ...parsed, image: pickThumbnail(videoId, maxresOk) };
+}
+
 export async function fetchOg(url: string): Promise<OgData> {
   if (!isHttpUrl(url)) {
     throw new Error('URL no válida: solo http/https');
@@ -90,13 +155,7 @@ export async function fetchOg(url: string): Promise<OgData> {
 
   const ytId = extractYouTubeId(url);
   if (ytId) {
-    const thumb = `https://i.ytimg.com/vi/${ytId}/hqdefault.jpg`;
-    try {
-      const data = await scrape(url);
-      return { ...data, image: data.image || thumb };
-    } catch {
-      return { title: '', description: '', image: thumb };
-    }
+    return fetchYouTubeOg(ytId);
   }
 
   return scrape(url);
@@ -112,6 +171,7 @@ async function scrape(url: string): Promise<OgData> {
       headers: {
         'User-Agent': 'WhatsApp/2.26',
         Accept: 'text/html,application/xhtml+xml',
+        'Accept-Language': 'es-ES,es;q=0.9,en;q=0.8',
       },
     });
     if (!res.ok) {

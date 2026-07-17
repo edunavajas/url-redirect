@@ -35,6 +35,7 @@ const TYPE_LABELS: Record<string, string> = {
   link: 'Link',
   video: 'Vídeo',
   promo: 'Promo',
+  section: 'Sección',
 };
 
 function renderBlockItem(b: BioBlock): string {
@@ -49,7 +50,7 @@ function renderBlockItem(b: BioBlock): string {
     <span class="bio-block-type type-${b.type}">${TYPE_LABELS[b.type] || b.type}</span>
     <span class="bio-block-info">
       <span class="bio-block-title">${escapeHtml(b.title || b.url)}</span>
-      ${b.title ? `<span class="bio-block-url">${escapeHtml(b.url)}</span>` : ''}
+      ${b.title && b.type !== 'section' ? `<span class="bio-block-url">${escapeHtml(b.url)}</span>` : ''}
     </span>
     <label class="toggle">
       <input type="checkbox" ${b.isActive ? 'checked' : ''}
@@ -109,15 +110,15 @@ function blockForm(b?: BioBlock): string {
           hx-on::after-request="closeModal('block-modal')">
       <div class="form-group">
         <label>Tipo</label>
-        <select name="type" id="block-type">
+        <select name="type" id="block-type" onchange="syncBlockTypeFields()">
           ${Object.entries(TYPE_LABELS).map(([v, l]) =>
             `<option value="${v}" ${b?.type === v ? 'selected' : ''}>${l}</option>`).join('')}
         </select>
       </div>
-      <div class="form-group">
+      <div class="form-group" id="fg-url">
         <label>URL</label>
         <div class="url-row">
-          <input type="text" name="url" id="block-url" value="${escapeHtml(b?.url || '')}" placeholder="https://..." required>
+          <input type="text" name="url" id="block-url" value="${escapeHtml(b?.url || '')}" placeholder="https://...">
           <button type="button" class="btn btn-secondary" id="og-fill-btn" onclick="autoFillOg()">Auto-rellenar</button>
         </div>
         <div id="og-status" class="og-status"></div>
@@ -126,11 +127,11 @@ function blockForm(b?: BioBlock): string {
         <label>Título <span class="label-hint">(opcional en social)</span></label>
         <input type="text" name="title" id="block-title" value="${escapeHtml(b?.title || '')}" placeholder="Título del bloque">
       </div>
-      <div class="form-group">
+      <div class="form-group" id="fg-subtitle">
         <label>Subtítulo</label>
         <input type="text" name="subtitle" id="block-subtitle" value="${escapeHtml(b?.subtitle || '')}" placeholder="Descripción corta">
       </div>
-      <div class="form-group">
+      <div class="form-group" id="fg-thumbnail">
         <label>Imagen (URL)</label>
         <input type="text" name="thumbnail_url" id="block-thumbnail" value="${escapeHtml(b?.thumbnailUrl || '')}" placeholder="https://..." oninput="updateThumbPreview()">
         <div id="thumb-preview" class="thumb-preview">${b?.thumbnailUrl ? `<img src="${escapeHtml(b.thumbnailUrl)}" alt="">` : ''}</div>
@@ -253,7 +254,26 @@ bio.get('/', async (c) => {
         });
       }
       initSortable();
-      document.body.addEventListener('htmx:afterSwap', initSortable);
+      syncBlockTypeFields();
+      document.body.addEventListener('htmx:afterSwap', function() { initSortable(); syncBlockTypeFields(); });
+
+      function syncBlockTypeFields() {
+        const sel = document.getElementById('block-type');
+        if (!sel) return;
+        const isSection = sel.value === 'section';
+        const urlInput = document.getElementById('block-url');
+        const subInput = document.getElementById('block-subtitle');
+        const thumbInput = document.getElementById('block-thumbnail');
+        const fgUrl = document.getElementById('fg-url');
+        const fgSub = document.getElementById('fg-subtitle');
+        const fgThumb = document.getElementById('fg-thumbnail');
+        if (fgUrl) fgUrl.style.display = isSection ? 'none' : '';
+        if (fgSub) fgSub.style.display = isSection ? 'none' : '';
+        if (fgThumb) fgThumb.style.display = isSection ? 'none' : '';
+        if (urlInput) { urlInput.disabled = isSection; urlInput.required = !isSection; }
+        if (subInput) subInput.disabled = isSection;
+        if (thumbInput) thumbInput.disabled = isSection;
+      }
 
       function updateThumbPreview() {
         const input = document.getElementById('block-thumbnail');

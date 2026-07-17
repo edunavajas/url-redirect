@@ -58,6 +58,29 @@ describe('validateBlockInput', () => {
     const r = validateBlockInput({ type: 'promo', title: 'x', url: 'https://a.com', thumbnail_url: 'ftp://img' });
     expect(r.ok).toBe(false);
   });
+  test('section sin url es válido', () => {
+    const r = validateBlockInput({ type: 'section', title: 'Vídeos' });
+    expect(r.ok).toBe(true);
+  });
+  test('section sin título es inválido', () => {
+    const r = validateBlockInput({ type: 'section' });
+    expect(r.ok).toBe(false);
+  });
+  test('section con url/subtitle/thumbnail se normalizan a vacíos', () => {
+    const r = validateBlockInput({
+      type: 'section',
+      title: 'Vídeos',
+      url: 'https://a.com',
+      subtitle: 'ignorado',
+      thumbnail_url: 'https://a.com/i.png',
+    });
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.data.url).toBe('');
+      expect(r.data.subtitle).toBe('');
+      expect(r.data.thumbnailUrl).toBe('');
+    }
+  });
 });
 
 describe('parseReorderIds', () => {

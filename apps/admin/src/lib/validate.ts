@@ -1,4 +1,4 @@
-export const BLOCK_TYPES = ['social', 'link', 'video', 'promo'] as const;
+export const BLOCK_TYPES = ['social', 'link', 'video', 'promo', 'section'] as const;
 export type BlockType = typeof BLOCK_TYPES[number];
 
 export function isValidHexColor(v: string): boolean {
@@ -34,6 +34,11 @@ export function validateBlockInput(body: Record<string, unknown>): { ok: true; d
   const url = String(body['url'] ?? '').trim();
   const thumbnailUrl = String(body['thumbnail_url'] ?? '').trim();
   const subtitle = String(body['subtitle'] ?? '').trim();
+
+  if (type === 'section') {
+    if (!title) return { ok: false, error: 'El título es obligatorio para este tipo' };
+    return { ok: true, data: { type, title, url: '', thumbnailUrl: '', subtitle: '' } };
+  }
 
   if (!url) return { ok: false, error: 'La URL es obligatoria' };
   if (!isValidHttpUrlOrEmpty(url)) return { ok: false, error: 'URL no válida (solo http/https)' };

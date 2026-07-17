@@ -205,6 +205,81 @@ describe('renderBioPage', () => {
     const html = renderBioPage(profile({ displayName: 'Edu', accentColor: '#ff2d55' }), []);
     expect(html).toContain(encodeURIComponent('#ff2d55'));
   });
+
+  test('section: emite h2.section-title sin enlace', () => {
+    const html = renderBioPage(
+      profile({ displayName: 'Edu' }),
+      [block({ type: 'section', title: 'Vídeos' })]
+    );
+    expect(html).toMatch(/<h2 class="section-title[^>]*>Vídeos<\/h2>/);
+    expect(html).not.toContain('<a ');
+  });
+
+  test('section: se intercala por position dentro de .blocks', () => {
+    const html = renderBioPage(
+      profile({ displayName: 'Edu' }),
+      [
+        block({ type: 'link', title: 'LinkUno', url: 'https://a.com', position: 2 }),
+        block({ type: 'section', title: 'Sección A', position: 1 }),
+      ]
+    );
+    expect(html.indexOf('Sección A')).toBeLessThan(html.indexOf('LinkUno'));
+  });
+
+  test('section inactiva no se renderiza', () => {
+    const html = renderBioPage(
+      profile({ displayName: 'Edu' }),
+      [block({ type: 'section', title: 'Oculta', isActive: false })]
+    );
+    expect(html).not.toContain('Oculta');
+  });
+
+  test('link mailto: data-copy, email como subtitle automático e icono sobre', () => {
+    const html = renderBioPage(
+      profile({ displayName: 'Edu' }),
+      [block({ type: 'link', title: 'Contacto', url: 'mailto:a@b.c' })]
+    );
+    expect(html).toContain('data-copy="a@b.c"');
+    expect(html).toContain('href="mailto:a@b.c"');
+    expect(html).toContain('<span class="card-sub">a@b.c</span>');
+    expect(html).toContain('M24 5.457v13.909'); // path del icono de sobre
+  });
+
+  test('link mailto con subtitle propio no se sobrescribe', () => {
+    const html = renderBioPage(
+      profile({ displayName: 'Edu' }),
+      [block({ type: 'link', title: 'Contacto', url: 'mailto:a@b.c', subtitle: 'Escríbeme' })]
+    );
+    expect(html).toContain('<span class="card-sub">Escríbeme</span>');
+    expect(html).not.toContain('<span class="card-sub">a@b.c</span>');
+  });
+
+  test('social mailto lleva data-copy', () => {
+    const html = renderBioPage(
+      profile({ displayName: 'Edu' }),
+      [block({ type: 'social', url: 'mailto:hola@devknives.link' })]
+    );
+    expect(html).toContain('data-copy="hola@devknives.link"');
+    expect(html).toContain('href="mailto:hola@devknives.link"');
+  });
+
+  test('escapa emails con caracteres raros en data-copy', () => {
+    const html = renderBioPage(
+      profile({ displayName: 'Edu' }),
+      [block({ type: 'link', title: 'x', url: 'mailto:a"b@c.d' })]
+    );
+    expect(html).toContain('data-copy="a&quot;b@c.d"');
+    expect(html).not.toContain('data-copy="a"b@c.d"');
+  });
+
+  test('incluye el script del toast y aria-live', () => {
+    const html = renderBioPage(profile({ displayName: 'Edu' }), []);
+    expect(html).toContain('id="toast"');
+    expect(html).toContain('role="status"');
+    expect(html).toContain('aria-live="polite"');
+    expect(html).toContain('navigator.clipboard');
+    expect(html).toContain('Email copiado');
+  });
 });
 
 describe('socialIconFor', () => {

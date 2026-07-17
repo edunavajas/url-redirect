@@ -44,7 +44,7 @@ export const bioProfile = pgTable('bio_profile', {
 
 export const bioBlocks = pgTable('bio_blocks', {
   id: bigserial('id', { mode: 'number' }).primaryKey(),
-  type: text('type', { enum: ['social', 'link', 'video', 'promo'] }).notNull(),
+  type: text('type', { enum: ['social', 'link', 'video', 'promo', 'section'] }).notNull(),
   title: text('title').notNull().default(''),
   url: text('url').notNull().default(''),
   thumbnailUrl: text('thumbnail_url').notNull().default(''),
@@ -65,4 +65,4 @@ export type BioProfile = typeof bioProfile.$inferSelect;
 export type NewBioProfile = typeof bioProfile.$inferInsert;
 export type BioBlock = typeof bioBlocks.$inferSelect;
 export type NewBioBlock = typeof bioBlocks.$inferInsert;
-export type BioBlockType = 'social' | 'link' | 'video' | 'promo';
+export type BioBlockType = 'social' | 'link' | 'video' | 'promo' | 'section';
