@@ -263,6 +263,89 @@ describe('renderBioPage', () => {
     expect(html).toContain('href="mailto:hola@devknives.link"');
   });
 
+  test('social mailto se renderiza como email-line, no como social-btn', () => {
+    const html = renderBioPage(
+      profile({ displayName: 'Edu' }),
+      [
+        block({ type: 'social', url: 'https://github.com/edu' }),
+        block({ type: 'social', url: 'mailto:edu@example.com', title: 'Escríbeme' }),
+      ]
+    );
+    const socialBtns = html.match(/class="social-btn/g) || [];
+    expect(socialBtns.length).toBe(1);
+    expect(html).toContain('class="email-line enter"');
+    expect(html).toContain('data-copy="edu@example.com"');
+    expect(html).toContain('href="mailto:edu@example.com"');
+    expect(html).toContain('<span class="email-text">edu@example.com</span>');
+    expect(html).toContain('aria-label="Copiar email edu@example.com"');
+    expect(html).toContain('<span class="copy-icon"><svg');
+    expect(html).not.toContain('Escríbeme');
+    expect(html.indexOf('class="socials"')).toBeLessThan(html.indexOf('class="email-line'));
+  });
+
+  test('varios socials mailto generan varias email-line', () => {
+    const html = renderBioPage(
+      profile({ displayName: 'Edu' }),
+      [
+        block({ type: 'social', url: 'mailto:a@example.com' }),
+        block({ type: 'social', url: 'mailto:b@example.com' }),
+      ]
+    );
+    const lines = html.match(/class="email-line/g) || [];
+    expect(lines.length).toBe(2);
+    expect(html).toContain('data-copy="a@example.com"');
+    expect(html).toContain('data-copy="b@example.com"');
+    expect(html).not.toContain('class="social-btn');
+    expect(html).not.toContain('class="socials"');
+  });
+
+  test('email-line sin socials no lleva margin negativo (clase --solo)', () => {
+    const html = renderBioPage(
+      profile({ displayName: 'Edu' }),
+      [block({ type: 'social', url: 'mailto:edu@example.com' })]
+    );
+    expect(html).toContain('class="email-line email-line--solo enter"');
+    expect(html).toContain('.email-line--solo{margin-top:0}');
+  });
+
+  test('email-line con socials no lleva la clase --solo', () => {
+    const html = renderBioPage(
+      profile({ displayName: 'Edu' }),
+      [
+        block({ type: 'social', url: 'https://github.com/edu' }),
+        block({ type: 'social', url: 'mailto:edu@example.com' }),
+      ]
+    );
+    expect(html).toContain('class="email-line enter"');
+    expect(html).not.toContain('email-line--solo enter');
+  });
+
+  test('link mailto dentro de .blocks sigue siendo card con sobre', () => {
+    const html = renderBioPage(
+      profile({ displayName: 'Edu' }),
+      [
+        block({ type: 'social', url: 'mailto:edu@example.com' }),
+        block({ type: 'link', title: 'Contacto', url: 'mailto:edu@example.com' }),
+      ]
+    );
+    expect(html).toContain('class="card card-link enter"');
+    expect(html).toContain('Contacto');
+    expect(html).toContain('M24 5.457v13.909');
+    const lines = html.match(/class="email-line/g) || [];
+    expect(lines.length).toBe(1);
+  });
+
+  test('el script del toast sigue presente con email-lines', () => {
+    const html = renderBioPage(
+      profile({ displayName: 'Edu' }),
+      [block({ type: 'social', url: 'mailto:edu@example.com' })]
+    );
+    expect(html).toContain('id="toast"');
+    expect(html).toContain('navigator.clipboard');
+    expect(html).toContain("closest('[data-copy]')");
+    expect(html).toContain('Email copiado');
+  });
+
   test('escapa emails con caracteres raros en data-copy', () => {
     const html = renderBioPage(
       profile({ displayName: 'Edu' }),

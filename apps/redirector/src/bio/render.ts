@@ -84,6 +84,15 @@ header{text-align:center;margin-bottom:28px}
 h1{font-size:22px;font-weight:600;letter-spacing:-0.02em}
 .tagline{margin-top:6px;font-size:15px;color:rgba(255,255,255,0.55)}
 .socials{display:flex;justify-content:center;flex-wrap:wrap;gap:12px;margin:22px 0 30px}
+.email-line{display:flex;align-items:center;justify-content:center;gap:7px;
+  margin:-16px 0 28px;font-size:14px;color:rgba(255,255,255,0.5);text-decoration:none;
+  transition:color .25s;}
+.email-line--solo{margin-top:0}
+.email-line:hover{color:rgba(255,255,255,0.85)}
+.email-line:active{transform:scale(0.97);transition-duration:120ms}
+.email-line .copy-icon{display:flex;opacity:0.45;transition:opacity .25s}
+.email-line:hover .copy-icon{opacity:0.9}
+.email-line svg{width:14px;height:14px}
 .social-btn{
   width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;
   color:rgba(255,255,255,0.85);
@@ -187,6 +196,16 @@ function renderSocial(block: BioBlock): string {
   return `<a class="social-btn enter" ${anim()} href="${url}"${copy} target="_blank" rel="noopener noreferrer" aria-label="${label}" title="${label}">${socialIconFor(block.url)}</a>`;
 }
 
+const COPY_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>';
+
+function renderEmailLine(block: BioBlock, solo: boolean): string {
+  const email = mailtoEmail(block.url);
+  if (!email) return '';
+  const e = escapeHtml(email);
+  const cls = solo ? 'email-line email-line--solo enter' : 'email-line enter';
+  return `<a class="${cls}" ${anim()} href="mailto:${e}" data-copy="${e}" aria-label="Copiar email ${e}"><span class="email-text">${e}</span><span class="copy-icon">${COPY_SVG}</span></a>`;
+}
+
 const PLAY_SVG = '<svg viewBox="0 0 24 24"><path d="M8 5.14v14l11-7-11-7z"/></svg>';
 const CHEVRON_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>';
 const LINK_ICON = '<svg viewBox="0 0 24 24"><path d="M10.59 13.41a1.996 1.996 0 0 0 2.82 0l3.77-3.77a2 2 0 1 0-2.83-2.83l1.42-1.42a4 4 0 1 1 5.66 5.66l-3.77 3.77a4 4 0 0 1-5.66 0 3.993 3.993 0 0 1-.53-.65l-1.41 1.42c.19.19.39.37.53.55zm2.82-2.82a1.996 1.996 0 0 0-2.82 0l-3.77 3.77a2 2 0 1 0 2.83 2.83l-1.42 1.42a4 4 0 1 1-5.66-5.66l3.77-3.77a4 4 0 0 1 5.66 0c.18.18.35.36.51.55l1.41-1.42a5.96 5.96 0 0 0-.51-.55z"/></svg>';
@@ -253,14 +272,18 @@ export function renderBioPage(profile: BioProfile | null, blocks: BioBlock[]): s
 
   const active = sortBlocks(blocks.filter(b => b.isActive));
   const socials = active.filter(b => b.type === 'social');
+  const socialBtns = socials.filter(b => !mailtoEmail(b.url));
+  const emailSocials = socials.filter(b => !!mailtoEmail(b.url));
   const rest = active.filter(b => b.type !== 'social');
 
   const pageTitle = escapeHtml(p.seoTitle || name || 'Links');
   const pageDesc = escapeHtml(p.seoDescription || tagline || '');
 
-  const socialsHtml = socials.length
-    ? `<div class="socials">${socials.map(renderSocial).join('')}</div>`
+  const socialsHtml = socialBtns.length
+    ? `<div class="socials">${socialBtns.map(renderSocial).join('')}</div>`
     : '';
+
+  const emailsHtml = emailSocials.map(b => renderEmailLine(b, socialBtns.length === 0)).join('');
 
   const blocksHtml = rest.map(b => {
     if (b.type === 'video') return renderVideo(b);
@@ -297,6 +320,7 @@ ${avatar ? `<meta property="og:image" content="${avatar}">` : ''}
     ${tagline ? `<p class="tagline enter" ${anim()}>${escapeHtml(tagline)}</p>` : ''}
   </header>
   ${socialsHtml}
+  ${emailsHtml}
   <div class="blocks">${blocksHtml}</div>
   <footer class="enter" ${anim()}>devknives.link</footer>
 </main>
