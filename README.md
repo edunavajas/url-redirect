@@ -306,6 +306,24 @@ curl https://go.tudominio.com/health
 
 ---
 
+## Deep links nativos (apps sociales → app nativa)
+
+Cuando un destino es una app soportada (YouTube por ahora) y el click llega desde el
+navegador interno de Instagram, TikTok, Facebook, X o LinkedIn, el redirector intenta
+abrir la app nativa en vez del webview:
+
+- **Android**: `302` a un `intent://` con `browser_fallback_url` (abre la app o cae a la web).
+- **iOS**: interstitial HTML mínimo que lanza el scheme (`youtube://...`) con fallback web a ~1.8 s.
+- **Cualquier otro contexto** (desktop, Safari directo, bots): `301` normal, sin cambios.
+
+La lógica vive en `apps/redirector/src/deeplink/` (detección de UA + registro de targets
+extensible en `deeplink/targets/`). Las respuestas de deep link llevan `Cache-Control: no-store`.
+
+Control por link: columna `links.deep_link_enabled` (default `true`, toggle en el admin).
+Kill-switch global en caliente: `DEEP_LINKS_DISABLED=true` (leída en cada request, sin redeploy).
+
+---
+
 ## Variables de Entorno
 
 ### Redirector
@@ -317,6 +335,7 @@ curl https://go.tudominio.com/health
 | `IP_SALT` | Sí | Salt para anonimizar IPs | `random-string` |
 | `REDIRECT_BASE_URL` | Sí | URL base del redirector | `https://go.tudominio.com` |
 | `ADMIN_BASE_URL` | Sí | URL base del admin (para CORS) | `https://admin.tudominio.com` |
+| `DEEP_LINKS_DISABLED` | No | `true` desactiva los deep links nativos en caliente | `false` |
 
 ### Admin
 
