@@ -308,13 +308,19 @@ curl https://go.tudominio.com/health
 
 ## Deep links nativos (apps sociales → app nativa)
 
-Cuando un destino es una app soportada (YouTube por ahora) y el click llega desde el
-navegador interno de Instagram, TikTok, Facebook, X o LinkedIn, el redirector intenta
-abrir la app nativa en vez del webview:
+Cuando un destino es una app soportada (YouTube por ahora) y el click llega desde un
+móvil (Android o iOS, in-app browser de Instagram/TikTok/Facebook/X/LinkedIn o navegador
+normal), el redirector sirve un interstitial HTML mínimo (`200`) que navega por JS a la
+app nativa con fallback web temporizado:
 
-- **Android**: `302` a un `intent://` con `browser_fallback_url` (abre la app o cae a la web).
-- **iOS**: interstitial HTML mínimo que lanza el scheme (`youtube://...`) con fallback web a ~1.8 s.
-- **Cualquier otro contexto** (desktop, Safari directo, bots): `301` normal, sin cambios.
+- **Android**: `window.location.replace(intent://…)` (sin `package=`) + fallback https a ~1 s.
+- **iOS**: `window.location.replace(vnd.youtube://…)` + fallback https a ~600 ms.
+- **Desktop y bots/crawlers** (WhatsApp, Twitterbot, facebookexternalhit…): `301` normal,
+  para que las previews de enlaces sigan resolviendo al destino.
+
+El interstitial se sirve también fuera de in-app browsers porque un redirect de servidor
+(301/302) NUNCA dispara Android App Links ni iOS Universal Links — la navegación debe
+iniciarse en cliente (mecanismo verificado contra openinapp).
 
 La lógica vive en `apps/redirector/src/deeplink/` (detección de UA + registro de targets
 extensible en `deeplink/targets/`). Las respuestas de deep link llevan `Cache-Control: no-store`.
