@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { db, schema } from '@url-redirect/db';
 import { runMigrations } from '@url-redirect/db';
 import { getCached, setCache } from './cache';
+import { decideDeepLink } from './deeplink/index';
 import { decideBioAction, buildBioCacheEntry, decideStaleFallback, type BioCacheEntry } from './bio/bioCache';
 import { eq } from 'drizzle-orm';
 import crypto from 'crypto';
@@ -95,7 +96,23 @@ app.get('/:slug', async (c) => {
     // (simplificado, en producción usar COUNT(*))
   }
 
-  // 7. Redirigir
+  // 7. Deep links nativos (in-app browsers → app nativa, p.ej. YouTube)
+  const deepLink = decideDeepLink({
+    destination: link.destination,
+    deepLinkEnabled: link.deepLinkEnabled,
+    userAgent,
+  });
+  if (deepLink.kind === 'intent') {
+    // NUNCA 301 para intent:// — no cachear
+    c.header('Cache-Control', 'no-store');
+    return c.redirect(deepLink.location, 302);
+  }
+  if (deepLink.kind === 'interstitial') {
+    c.header('Cache-Control', 'no-store');
+    return c.html(deepLink.html, 200);
+  }
+
+  // 8. Redirigir (web normal)
   return c.redirect(link.destination, 301);
 });
 

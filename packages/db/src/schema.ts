@@ -6,6 +6,7 @@ export const links = pgTable('links', {
   destination: text('destination').notNull(),
   title: text('title'),
   isActive: boolean('is_active').notNull().default(true),
+  deepLinkEnabled: boolean('deep_link_enabled').notNull().default(true),
   maxClicks: integer('max_clicks'),
   createdAt: bigint('created_at', { mode: 'number' }).notNull().$defaultFn(() => Date.now()),
   expiresAt: bigint('expires_at', { mode: 'number' }),

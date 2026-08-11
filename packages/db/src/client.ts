@@ -42,6 +42,8 @@ export async function runMigrations() {
         country TEXT
       );
 
+      ALTER TABLE links ADD COLUMN IF NOT EXISTS deep_link_enabled BOOLEAN NOT NULL DEFAULT true;
+
       CREATE INDEX IF NOT EXISTS slug_idx ON links(slug);
       CREATE INDEX IF NOT EXISTS visits_link_id_idx ON visits(link_id);
       CREATE INDEX IF NOT EXISTS visits_clicked_at_idx ON visits(clicked_at);
