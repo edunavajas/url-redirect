@@ -36,44 +36,52 @@ const UAS = {
 };
 
 describe('detectInAppBrowser', () => {
-  test('null o vacío → no in-app', () => {
-    expect(detectInAppBrowser(null)).toEqual({ os: 'other', inApp: false });
-    expect(detectInAppBrowser('')).toEqual({ os: 'other', inApp: false });
+  test('null o vacío → no in-app, no bot', () => {
+    expect(detectInAppBrowser(null)).toEqual({ os: 'other', inApp: false, bot: false });
+    expect(detectInAppBrowser('')).toEqual({ os: 'other', inApp: false, bot: false });
   });
 
   test('Instagram en Android y iOS', () => {
-    expect(detectInAppBrowser(UAS.instagramAndroid)).toEqual({ os: 'android', inApp: true, app: 'instagram' });
-    expect(detectInAppBrowser(UAS.instagramIOS)).toEqual({ os: 'ios', inApp: true, app: 'instagram' });
+    expect(detectInAppBrowser(UAS.instagramAndroid)).toEqual({ os: 'android', inApp: true, app: 'instagram', bot: false });
+    expect(detectInAppBrowser(UAS.instagramIOS)).toEqual({ os: 'ios', inApp: true, app: 'instagram', bot: false });
   });
 
   test('Facebook en Android y iOS', () => {
-    expect(detectInAppBrowser(UAS.facebookAndroid)).toEqual({ os: 'android', inApp: true, app: 'facebook' });
-    expect(detectInAppBrowser(UAS.facebookIOS)).toEqual({ os: 'ios', inApp: true, app: 'facebook' });
+    expect(detectInAppBrowser(UAS.facebookAndroid)).toEqual({ os: 'android', inApp: true, app: 'facebook', bot: false });
+    expect(detectInAppBrowser(UAS.facebookIOS)).toEqual({ os: 'ios', inApp: true, app: 'facebook', bot: false });
   });
 
   test('TikTok en Android y iOS', () => {
-    expect(detectInAppBrowser(UAS.tiktokAndroid)).toEqual({ os: 'android', inApp: true, app: 'tiktok' });
-    expect(detectInAppBrowser(UAS.tiktokIOS)).toEqual({ os: 'ios', inApp: true, app: 'tiktok' });
+    expect(detectInAppBrowser(UAS.tiktokAndroid)).toEqual({ os: 'android', inApp: true, app: 'tiktok', bot: false });
+    expect(detectInAppBrowser(UAS.tiktokIOS)).toEqual({ os: 'ios', inApp: true, app: 'tiktok', bot: false });
   });
 
-  test('X (Twitter) en Android y iOS', () => {
-    expect(detectInAppBrowser(UAS.xAndroid)).toEqual({ os: 'android', inApp: true, app: 'x' });
-    expect(detectInAppBrowser(UAS.xIOS)).toEqual({ os: 'ios', inApp: true, app: 'x' });
+  test('X (Twitter) en Android y iOS — la app NO es bot', () => {
+    expect(detectInAppBrowser(UAS.xAndroid)).toEqual({ os: 'android', inApp: true, app: 'x', bot: false });
+    expect(detectInAppBrowser(UAS.xIOS)).toEqual({ os: 'ios', inApp: true, app: 'x', bot: false });
   });
 
   test('LinkedIn en Android y iOS', () => {
-    expect(detectInAppBrowser(UAS.linkedinAndroid)).toEqual({ os: 'android', inApp: true, app: 'linkedin' });
-    expect(detectInAppBrowser(UAS.linkedinIOS)).toEqual({ os: 'ios', inApp: true, app: 'linkedin' });
+    expect(detectInAppBrowser(UAS.linkedinAndroid)).toEqual({ os: 'android', inApp: true, app: 'linkedin', bot: false });
+    expect(detectInAppBrowser(UAS.linkedinIOS)).toEqual({ os: 'ios', inApp: true, app: 'linkedin', bot: false });
   });
 
-  test('navegadores normales → no in-app', () => {
-    expect(detectInAppBrowser(UAS.chromeAndroid)).toEqual({ os: 'android', inApp: false });
-    expect(detectInAppBrowser(UAS.safariIOS)).toEqual({ os: 'ios', inApp: false });
-    expect(detectInAppBrowser(UAS.firefoxDesktop)).toEqual({ os: 'other', inApp: false });
-    expect(detectInAppBrowser(UAS.chromeDesktop)).toEqual({ os: 'other', inApp: false });
+  test('navegadores normales → no in-app, no bot', () => {
+    expect(detectInAppBrowser(UAS.chromeAndroid)).toEqual({ os: 'android', inApp: false, bot: false });
+    expect(detectInAppBrowser(UAS.safariIOS)).toEqual({ os: 'ios', inApp: false, bot: false });
+    expect(detectInAppBrowser(UAS.firefoxDesktop)).toEqual({ os: 'other', inApp: false, bot: false });
+    expect(detectInAppBrowser(UAS.chromeDesktop)).toEqual({ os: 'other', inApp: false, bot: false });
   });
 
-  test('Googlebot → no in-app', () => {
-    expect(detectInAppBrowser(UAS.googlebot)).toEqual({ os: 'other', inApp: false });
+  test('bots y unfurlers → bot: true', () => {
+    expect(detectInAppBrowser(UAS.googlebot).bot).toBe(true);
+    expect(detectInAppBrowser('WhatsApp/2.23.20.0 A').bot).toBe(true);
+    expect(detectInAppBrowser('facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)').bot).toBe(true);
+    expect(detectInAppBrowser('Twitterbot/1.0').bot).toBe(true);
+    expect(detectInAppBrowser('TelegramBot (like TwitterBot)').bot).toBe(true);
+    expect(detectInAppBrowser('Mozilla/5.0 (compatible; Discordbot/2.0; +https://discordapp.com)').bot).toBe(true);
+    expect(detectInAppBrowser('Slackbot-LinkExpanding 1.0 (+https://api.slack.com/robots)').bot).toBe(true);
+    expect(detectInAppBrowser('Mozilla/5.0 (compatible; bingbot/2.0; +http://www.bing.com/bingbot.htm)').bot).toBe(true);
+    expect(detectInAppBrowser('Embedly (+http://support.embed.ly/)').bot).toBe(true);
   });
 });

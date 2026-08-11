@@ -74,25 +74,25 @@ describe('youtube builders', () => {
     expect(canonicalWeb(playlist)).toBe('https://www.youtube.com/playlist?list=PL123');
   });
 
-  test('iosScheme', () => {
-    expect(iosScheme(video)).toBe('youtube://watch?v=dQw4w9WgXcQ');
-    expect(iosScheme({ kind: 'live', id: 'abc123' })).toBe('youtube://watch?v=abc123');
-    expect(iosScheme(shorts)).toBe('youtube://shorts/abc123');
-    expect(iosScheme(channel)).toBe('youtube://channel/UC123');
-    // handle y playlist → https universal link
-    expect(iosScheme(handle)).toBe('https://www.youtube.com/@MrBeast');
-    expect(iosScheme(playlist)).toBe('https://www.youtube.com/playlist?list=PL123');
+  test('iosScheme → vnd.youtube:// para TODAS las formas', () => {
+    expect(iosScheme(video)).toBe('vnd.youtube://www.youtube.com/watch?v=dQw4w9WgXcQ');
+    expect(iosScheme({ kind: 'live', id: 'abc123' })).toBe('vnd.youtube://www.youtube.com/live/abc123');
+    expect(iosScheme(shorts)).toBe('vnd.youtube://www.youtube.com/shorts/abc123');
+    expect(iosScheme(channel)).toBe('vnd.youtube://www.youtube.com/channel/UC123');
+    expect(iosScheme(handle)).toBe('vnd.youtube://www.youtube.com/@MrBeast');
+    expect(iosScheme(playlist)).toBe('vnd.youtube://www.youtube.com/playlist?list=PL123');
   });
 
-  test('androidIntent con browser_fallback_url url-encoded', () => {
+  test('androidIntent sin package= y con browser_fallback_url url-encoded', () => {
     const intent = androidIntent(video);
     expect(intent).toBe(
-      'intent://www.youtube.com/watch?v=dQw4w9WgXcQ#Intent;package=com.google.android.youtube;scheme=https;S.browser_fallback_url=' +
+      'intent://www.youtube.com/watch?v=dQw4w9WgXcQ#Intent;scheme=https;S.browser_fallback_url=' +
         encodeURIComponent('https://www.youtube.com/watch?v=dQw4w9WgXcQ') +
         ';end',
     );
+    expect(intent).not.toContain('package=');
     // shorts
     expect(androidIntent(shorts)).toContain('intent://www.youtube.com/shorts/abc123#Intent;');
-    expect(androidIntent(shorts)).toContain('package=com.google.android.youtube');
+    expect(androidIntent(shorts)).not.toContain('package=');
   });
 });

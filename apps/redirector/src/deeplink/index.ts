@@ -2,10 +2,7 @@ import { detectInAppBrowser } from './detect';
 import { buildInterstitial } from './interstitial';
 import { targets } from './targets/index';
 
-export type DeepLinkDecision =
-  | { kind: 'plain' }
-  | { kind: 'intent'; location: string }
-  | { kind: 'interstitial'; html: string };
+export type DeepLinkDecision = { kind: 'plain' } | { kind: 'interstitial'; html: string };
 
 export interface DeepLinkInput {
   destination: string;
@@ -40,19 +37,38 @@ export function decideDeepLink({ destination, deepLinkEnabled, userAgent }: Deep
   if (!target) return PLAIN;
 
   const detection = detectInAppBrowser(userAgent);
-  if (!detection.inApp) return PLAIN;
 
+  // Bots/unfurlers: los previews de enlaces deben resolver al destino web
+  if (detection.bot) return PLAIN;
+
+  const appName = target.name === 'youtube' ? 'YouTube' : target.name;
+  const fallbackUrl = target.canonicalWeb(parsed);
+
+  // Mecanismo replicado de openinapp (verificado en producción):
+  // cualquier móvil (in-app o navegador normal) recibe la página con
+  // navegación client-side; solo desktop/desconocido sigue con redirect.
   if (detection.os === 'android') {
-    return { kind: 'intent', location: target.androidIntent(parsed) };
+    return {
+      kind: 'interstitial',
+      html: buildInterstitial({
+        primaryUrl: target.androidIntent(parsed),
+        fallbackUrl,
+        appName,
+        fallbackDelayMs: 1000,
+      }),
+    };
   }
 
   if (detection.os === 'ios') {
-    const html = buildInterstitial({
-      schemeUrl: target.iosScheme(parsed),
-      httpsUrl: target.canonicalWeb(parsed),
-      appName: target.name === 'youtube' ? 'YouTube' : target.name,
-    });
-    return { kind: 'interstitial', html };
+    return {
+      kind: 'interstitial',
+      html: buildInterstitial({
+        primaryUrl: target.iosScheme(parsed),
+        fallbackUrl,
+        appName,
+        fallbackDelayMs: 600,
+      }),
+    };
   }
 
   return PLAIN;

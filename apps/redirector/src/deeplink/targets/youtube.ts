@@ -79,28 +79,20 @@ function canonicalWeb(parsed: YouTubeParsed): string {
   }
 }
 
+// vnd.youtube:// funciona para todas las formas (incluidos @handle y playlist)
 function iosScheme(parsed: YouTubeParsed): string {
-  switch (parsed.kind) {
-    case 'video':
-    case 'live':
-      return `youtube://watch?v=${parsed.id}`;
-    case 'shorts':
-      return `youtube://shorts/${parsed.id}`;
-    case 'channel':
-      return `youtube://channel/${parsed.id}`;
-    // handle y playlist no tienen scheme fiable → https universal link
-    // (iOS abre la app igualmente si está instalada)
-    default:
-      return canonicalWeb(parsed);
-  }
+  const u = new URL(canonicalWeb(parsed));
+  return `vnd.youtube://${u.host}${u.pathname}${u.search}`;
 }
 
+// SIN package= — verificado contra yt.openinapp.co en producción:
+// con package= Chrome no ofrece abrir la app en muchos dispositivos
 function androidIntent(parsed: YouTubeParsed): string {
   const canonical = canonicalWeb(parsed);
   const u = new URL(canonical);
   const target = `${u.host}${u.pathname}${u.search}`;
   const fallback = encodeURIComponent(canonical);
-  return `intent://${target}#Intent;package=com.google.android.youtube;scheme=https;S.browser_fallback_url=${fallback};end`;
+  return `intent://${target}#Intent;scheme=https;S.browser_fallback_url=${fallback};end`;
 }
 
 export const youtubeTarget: DeepLinkTarget<YouTubeParsed> = {

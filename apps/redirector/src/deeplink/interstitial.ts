@@ -1,5 +1,7 @@
-// Interstitial iOS: intenta abrir la app nativa vía scheme y, si no funciona,
-// cae al https canónico en ~1.8s. Sin assets externos, <3KB, texto en español.
+// Página de apertura: navegación client-side al estilo openinapp —
+// window.location.replace(primaryUrl) inmediato (intent:// en Android,
+// vnd.youtube:// en iOS) y fallback https si la app no se abre.
+// Sin assets externos, <3KB, texto en español.
 
 function escapeHtml(s: string): string {
   return s
@@ -16,16 +18,19 @@ function jsString(s: string): string {
 }
 
 export interface InterstitialOptions {
-  schemeUrl: string;
-  httpsUrl: string;
+  primaryUrl: string;
+  fallbackUrl: string;
   appName: string;
+  fallbackDelayMs: number;
 }
 
-export function buildInterstitial({ schemeUrl, httpsUrl, appName }: InterstitialOptions): string {
+export function buildInterstitial({ primaryUrl, fallbackUrl, appName, fallbackDelayMs }: InterstitialOptions): string {
   const app = escapeHtml(appName);
-  const https = escapeHtml(httpsUrl);
-  const jsScheme = jsString(schemeUrl);
-  const jsHttps = jsString(httpsUrl);
+  const primary = escapeHtml(primaryUrl);
+  const fallback = escapeHtml(fallbackUrl);
+  const jsPrimary = jsString(primaryUrl);
+  const jsFallback = jsString(fallbackUrl);
+  const delay = Math.max(0, Math.floor(fallbackDelayMs));
 
   return `<!DOCTYPE html>
 <html lang="es">
@@ -40,24 +45,23 @@ body{font-family:-apple-system,system-ui,sans-serif;display:flex;align-items:cen
 .btn{display:inline-block;margin-top:1.25rem;padding:.8rem 1.6rem;background:#c00;color:#fff;border-radius:999px;text-decoration:none;font-weight:600}
 .small{margin-top:1rem;font-size:.8rem;color:#999}
 </style>
-<noscript><meta http-equiv="refresh" content="0;url=${https}"></noscript>
+<noscript><meta http-equiv="refresh" content="0;url=${fallback}"></noscript>
 </head>
 <body>
 <div class="box">
 <p>Abriendo ${app}…</p>
-<a class="btn" href="${https}" id="open">Abrir en ${app}</a>
+<a class="btn" href="${primary}" id="open">Abrir en ${app}</a>
 <p class="small">Si no se abre automáticamente, toca el botón.</p>
 </div>
 <script>
 (function(){
-var scheme=${jsScheme},https=${jsHttps},start=Date.now();
-try{window.location.replace(scheme);}catch(e){}
-setTimeout(function(){
-if(!document.hidden&&Date.now()-start<3000){window.location.replace(https);}
-},1800);
+var primary=${jsPrimary},fallback=${jsFallback},delay=${delay};
+function go(url){try{window.location.replace(url);}catch(e){window.location.href=url;}}
+go(primary);
+setTimeout(function(){if(!document.hidden){go(fallback);}},delay);
 document.getElementById('open').addEventListener('click',function(ev){
-ev.preventDefault();window.location.replace(scheme);
-setTimeout(function(){window.location.replace(https);},1800);
+ev.preventDefault();go(primary);
+setTimeout(function(){if(!document.hidden){go(fallback);}},delay);
 });
 })();
 </script>

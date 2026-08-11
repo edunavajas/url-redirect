@@ -96,17 +96,12 @@ app.get('/:slug', async (c) => {
     // (simplificado, en producción usar COUNT(*))
   }
 
-  // 7. Deep links nativos (in-app browsers → app nativa, p.ej. YouTube)
+  // 7. Deep links nativos (móvil → página con navegación client-side a la app, p.ej. YouTube)
   const deepLink = decideDeepLink({
     destination: link.destination,
     deepLinkEnabled: link.deepLinkEnabled,
     userAgent,
   });
-  if (deepLink.kind === 'intent') {
-    // NUNCA 301 para intent:// — no cachear
-    c.header('Cache-Control', 'no-store');
-    return c.redirect(deepLink.location, 302);
-  }
   if (deepLink.kind === 'interstitial') {
     c.header('Cache-Control', 'no-store');
     return c.html(deepLink.html, 200);
